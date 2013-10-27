@@ -1,0 +1,27 @@
+{
+  "name": "tattler",
+  "version": "0.0.0",
+  "description": "A run and report framework. Keeps you up to date with what's going on with your code",
+  "main": "index.js",
+  "scripts": {
+    "test": "bin/tattler selftest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/tattler"
+  },
+  "keywords": [
+    "run",
+    "report",
+    "test",
+    "spec",
+    "build",
+    "integration"
+  ],
+  "author": "Joakim Ohlrogge",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "commander": "~2.0.0",
+    "q": "~0.9.7"
+  }
+}
