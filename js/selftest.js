@@ -11,7 +11,7 @@ var passingSpec =  function(){
 
 var failingSpec =  function(){
     var deferred = Q.defer();
-    deferred.promise.name="simple test";
+    deferred.promise.name="failing test";
     deferred.reject("error");
     return deferred.promise;
 }
@@ -22,10 +22,14 @@ Q.when(tattler.run(
     function(result){
         return result;
     }
-)).done(function(theResult){
-    theResult.forEach(function(result) {
-        process.stdout.write(result.passed ? '.' : 'e');
+)).
+progress(function(progress){console.log("progress",progress);}).
+done(function(theResult){
+    assert.equal(theResult[0].passed, true);
+    assert.equal(theResult[0].name, 'simple test');
+    assert.equal(theResult[0].result, 'result');
 
-    });
-    console.log("");
+    assert.equal(theResult[1].passed, false);
+    assert.equal(theResult[1].name, 'failing test');
+    assert.equal(theResult[1].result, 'error');
 });
