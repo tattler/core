@@ -1,1 +1,1 @@
-node js/runselftest.js
+node js/selftest.js
