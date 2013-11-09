@@ -1,14 +1,20 @@
-function status(name, status) {
-    return {name:name, status:status};
-};
 
-var progress = {
-    started: function(name){return status(name, 'started');},
-    success: function(name){return status(name, 'success');},
-    failure: function(name){return status(name, 'failure');}
-};
 
 var tattler = function(Q) {
+    var nextTick = typeof(process) !== 'undefined' ? process.nextTick : function(task){
+        return setTimeout(task, 0);
+    }
+
+    function status(name, status) {
+        return {name:name, status:status};
+    };
+
+    var progress = {
+        started: function(name){return status(name, 'started');},
+        success: function(name){return status(name, 'success');},
+        failure: function(name){return status(name, 'failure');}
+    };
+
     var run = function(jobs){ 
         var runJobs = function(deferred) {
             if(!jobs.map) {
@@ -34,18 +40,18 @@ var tattler = function(Q) {
             });
         }
         var deferred = Q.defer();
-        process.nextTick(function(){runJobs(deferred)});
+        nextTick(function(){runJobs(deferred)});
         return deferred.promise;
     };
 
 
     var res =  {
-        run: run
+        run: run,
+        progress:progress
     };
     return res;
 };
 
-
-var res = tattler(require('q'));
-exports.run = res.run;
-exports.progress = progress;
+if(typeof module !== 'undefined' && module.exports) {
+    module.exports = tattler(require('q'));
+};
