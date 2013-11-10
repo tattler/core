@@ -22,17 +22,18 @@ var tattler = function(Q) {
             }
             var results = jobs.map(
                 function(job){
+                    var name = job.id || job.name;
                     var result = job();
-                    deferred.notify(progress.started(result.name));
+                    deferred.notify(progress.started(name));
                     return Q.when(result).
                         then(
                             function(res){
-                                deferred.notify(progress.success(result.name));
-                                return {name:result.name, passed:true, result:res};
+                                deferred.notify(progress.success(name));
+                                return {name:name, passed:true, result:res};
                             },
                              function(res){
-                                 deferred.notify(progress.failure(result.name));
-                                 return {name:result.name, passed:false, result:res}
+                                 deferred.notify(progress.failure(name));
+                                 return {name:name, passed:false, result:res}
                              })
                 });
             Q.all(results).then(function(res){
@@ -43,9 +44,17 @@ var tattler = function(Q) {
         nextTick(function(){runJobs(deferred)});
         return deferred.promise;
     };
-
+    
+    var task = function(id, fn) {
+        var run = function(){
+            return fn();
+        }
+        run.id = id;
+        return run;
+    }
 
     var res =  {
+        task: task,
         run: run,
         progress:progress
     };
