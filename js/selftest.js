@@ -12,10 +12,15 @@
                 deferred.reject("error");
                 return deferred.promise;
             });
-
+            
+            function passingSpecWithAName() {
+                var deferred = Q.defer();
+                deferred.resolve("a result");
+                return deferred.promise;
+            }
 
             function testRun(name, specs, expectedProgress, expectedResults) {
-                return function() {
+                return tattler.task(name, function() {
                     var progressLog = [];
                     var result = Q.when(tattler.run(specs)).
                         progress(function(progress){
@@ -27,11 +32,18 @@
                         });
                     result.name = name;
                     return result;
-                }
+                });
             }
 
 
             Q.when(tattler.run([
+                testRun("spec with a name",
+                        passingSpecWithAName,
+                        [tattler.progress.started('passingSpecWithAName'),
+                         tattler.progress.success('passingSpecWithAName')],
+                        [{passed: true,
+                          name: 'passingSpecWithAName',
+                          result: 'a result'}]),
                 testRun("one passing",
                         passingSpec,
                         [tattler.progress.started('simple test'),
