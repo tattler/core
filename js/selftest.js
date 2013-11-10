@@ -1,19 +1,17 @@
 (function() {
     {
         var specs = function(Q, tattler, assert) {
-            var passingSpec =  function(){
+            var passingSpec =  tattler.task("simple test", function(){
                 var deferred = Q.defer();
-                deferred.promise.name="simple test";
                 deferred.resolve("result");
                 return deferred.promise;
-            }
+            });
 
-            var failingSpec =  function(){
+            var failingSpec =  tattler.task("failing test", function(){
                 var deferred = Q.defer();
-                deferred.promise.name="failing test";
                 deferred.reject("error");
                 return deferred.promise;
-            }
+            });
 
 
             function testRun(name, specs, expectedProgress, expectedResults) {
