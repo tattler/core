@@ -77,7 +77,10 @@
                         console.log("%s %s", progress.status === 'success'? '.':'F', progress.name);
                     }
                 }).done(function(result){
-                    var summary = result.reduce(function(previous, current) {
+                    tattler.streams.each(result, function(value){
+                        console.log("result ", value);
+                    });
+/*                    var summary = result.reduce(function(previous, current) {
                         var sum = previous;
                         if (current.passed) {
                             sum.passed += 1;
@@ -96,7 +99,7 @@
                             console.log(elem.result);
                         });
                     console.log();
-                    console.log(summary);
+                    console.log(summary);*/
                 })
         }
     }
