@@ -47,12 +47,53 @@ nnn        }
             }
             return iteration(stream);
         }
+        
+        var each = function(nxt, callback) {
+            return when(nxt).then(
+                function(val) {
+                    callback(value(val));
+                    if(val !== EOF) {
+                        each(next(val), callback);
+                    }
+                }
+            )
+        }
+
+        var filter = function(next, condition) {
+            var passed = stream();
+            var rejected = stream();
+            var doMatch = condition;
+            if((typeof condition) != "function") {
+                doMatch = function(val) {
+                    var match = condition.exec(val)
+                    return match && (match.length > 1 ? match.slice(1) : match[0])
+                }
+            }
+
+            each(next, function(val) {
+                var match = doMatch(val)
+                if(match) {
+                    passed.push(match) 
+                }
+                else {
+                    rejected.push(val);
+                }
+            });
+            return {
+                read: {
+                    next: passed.read.next,
+                    unmatched: rejected.read.next
+                }
+            };
+        }
 
         return {
             drop: drop,
             take: take,
             iterate: iterate,
-            map: map
+            map: map,
+            each: each,
+            filter: filter
         }
      }
     if(typeof define !== 'undefined') {

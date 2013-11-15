@@ -77,7 +77,7 @@
                         console.log("%s %s", progress.status === 'success'? '.':'F', progress.name);
                     }
                 }).done(function(result){
-                    tattler.streams.each(result, function(value){
+                    tattler.streamsFn.each(result, function(value){
                         console.log("result ", value);
                     });
 /*                    var summary = result.reduce(function(previous, current) {
