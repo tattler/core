@@ -1,6 +1,5 @@
-
-
-var tattler = function(Q) {
+var tattler = function(Q, _, streams, streamsFn) {
+  
     var nextTick = typeof(process) !== 'undefined' ? process.nextTick : function(task){
         return setTimeout(task, 0);
     }
@@ -14,35 +13,42 @@ var tattler = function(Q) {
         success: function(name){return status(name, 'success');},
         failure: function(name){return status(name, 'failure');}
     };
+    
+    var resolveJobStream = function(jobs) {
+        if(streams.isCons(jobs)) {
+            return jobs;
+        };
+        str = streams.stream();
+        result = str.read.next();
+        if(_.isArray(jobs)) {
+            _.each(jobs, str.push);
+            str.close();
+        }
+        else {
+            str.push(jobs);
+            str.close();
+        }
+        return result;
+    };
 
     var run = function(jobs){ 
-        var runJobs = function(deferred) {
-            if(!jobs.map) {
-                jobs = [jobs];
-            }
-            var results = jobs.map(
-                function(job){
+        return Q.when(jobs).then(function(resolvedJobs) {
+            var stream = resolveJobStream(resolvedJobs);
+            return streamsFn.map(stream, function(job){
+                if(job) {
                     var name = job.id || job.name;
                     var result = job();
-                    deferred.notify(progress.started(name));
                     return Q.when(result).
                         then(
                             function(res){
-                                deferred.notify(progress.success(name));
                                 return {name:name, passed:true, result:res};
                             },
-                             function(res){
-                                 deferred.notify(progress.failure(name));
-                                 return {name:name, passed:false, result:res}
-                             })
-                });
-            Q.all(results).then(function(res){
-                return deferred.resolve(res);
+                            function(res){
+                                return {name:name, passed:false, result:res}
+                            })
+                }
             });
-        }
-        var deferred = Q.defer();
-        nextTick(function(){runJobs(deferred)});
-        return deferred.promise;
+        });
     };
     
     var task = function(id, fn) {
@@ -54,6 +60,8 @@ var tattler = function(Q) {
     }
 
     var res =  {
+        streams:streams,
+        streamsFn:streamsFn,
         task: task,
         run: run,
         progress:progress
@@ -62,5 +70,9 @@ var tattler = function(Q) {
 };
 
 if(typeof module !== 'undefined' && module.exports) {
-    module.exports = tattler(require('q'));
+    module.exports = tattler(
+        require('q'), 
+        require('lodash'), 
+        require('./streams'), 
+        require('./streams-fn'));
 };
