@@ -1,6 +1,6 @@
 (function() {
     {
-        var specs = function(Q, tattler, assert, streams, streamsFn) {
+        var specs = function(Q, tattler, assert) {
             var passingSpec =  tattler.task("simple test", function(){
                 var deferred = Q.defer();
                 deferred.resolve("result");
@@ -127,10 +127,9 @@
                 throw new AssertionError();
             }
         }
-        console.log("create tattler", streamsFn);
         specs(
             Q,
-            tattler(Q, streams, streamsFn),
+            tattler(Q, _, streams, streamsFn),
             {deepEqual:deepEqual}
         )
     }

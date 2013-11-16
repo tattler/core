@@ -122,7 +122,6 @@
         module.exports = streamsFn(require('./streams'), require('q'));
     }
     else {
-        console.log("Streamsfn", window, window.streams);
         window.streamsFn = streamsFn(window.streams, Q);
     }
 
