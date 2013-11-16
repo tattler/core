@@ -11,7 +11,7 @@
                         phloem.cons(phloem.value(val), take(phloem.next(val), count-1)) : 
                         phloem.EOF;
                 });
-nnn        }
+        }
 
         var drop = function(xs, count) {
             return when(xs).then(
@@ -118,9 +118,11 @@ nnn        }
         return define(['streams', 'q'], streamsFn)
     }
     else if(typeof module !== 'undefined' && module.exports) {
+
         module.exports = streamsFn(require('./streams'), require('q'));
     }
     else {
+        console.log("Streamsfn", window, window.streams);
         window.streamsFn = streamsFn(window.streams, Q);
     }
 

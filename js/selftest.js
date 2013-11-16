@@ -127,13 +127,11 @@
                 throw new AssertionError();
             }
         }
-        
+        console.log("create tattler", streamsFn);
         specs(
             Q,
-            tattler(Q),
-            {deepEqual:deepEqual},
-            streams, 
-            streamsFn
+            tattler(Q, streams, streamsFn),
+            {deepEqual:deepEqual}
         )
     }
 })();
