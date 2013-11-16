@@ -36,18 +36,14 @@ var tattler = function(Q, _, streams, streamsFn) {
             var stream = resolveJobStream(resolvedJobs);
             return streamsFn.map(stream, function(job){
                 if(job) {
-                    console.log("running job", job);
                     var name = job.id || job.name;
                     var result = job();
-//                    deferred.notify(progress.started(name));
                     return Q.when(result).
                         then(
                             function(res){
-  //                              deferred.notify(progress.success(name));
                                 return {name:name, passed:true, result:res};
                             },
                             function(res){
-    //                            deferred.notify(progress.failure(name));
                                 return {name:name, passed:false, result:res}
                             })
                 }

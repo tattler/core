@@ -1,6 +1,6 @@
 (function() {
     {
-        var specs = function(Q, tattler, assert) {
+        var specs = function(Q, tattler, assert, streams, streamsFn) {
             var passingSpec =  tattler.task("simple test", function(){
                 var deferred = Q.defer();
                 deferred.resolve("result");
@@ -19,88 +19,85 @@
                 return deferred.promise;
             }
 
-            function testRun(name, specs, expectedProgress, expectedResults) {
+            function testRun(name, specs, expectedResults) {
                 return tattler.task(name, function() {
-                    var progressLog = [];
-                    var result = Q.when(tattler.run(specs)).
-                        progress(function(progress){
-                            progressLog = progressLog.concat(progress);
-                        }).
-                        then(function(theResult){
-                            assert.deepEqual(progressLog, expectedProgress);
-                            assert.deepEqual(theResult, expectedResults);
-                        });
-                    result.name = name;
-                    return result;
+                    return tattler.streamsFn.fold(
+                        tattler.run (specs),
+                        function(acc, result){
+                            return Q.when(acc).then(
+                                function(a){
+                                    return Q.when(result).then( 
+                                        function(r){
+                                            a[r.name] = r;
+                                            return acc;
+                                        },
+                                        function(error) {
+                                            a[error.name] = error;
+                                            return a;
+                                        });
+                                })
+                        },
+                        Q.when({})
+                    ).then(function(allResults){
+                        assert.deepEqual(allResults, expectedResults);
+                    });
                 });
             }
 
 
-            Q.when(tattler.run([
-                testRun("spec with a name",
-                        passingSpecWithAName,
-                        [tattler.progress.started('passingSpecWithAName'),
-                         tattler.progress.success('passingSpecWithAName')],
-                        [{passed: true,
-                          name: 'passingSpecWithAName',
-                          result: 'a result'}]),
-                testRun("one passing",
-                        passingSpec,
-                        [tattler.progress.started('simple test'),
-                         tattler.progress.success('simple test')],
-                        [{passed: true,
-                          name: 'simple test',
-                          result: 'result'}]),
-                testRun("one failing",
-                        failingSpec,
-                        [tattler.progress.started('failing test'),
-                         tattler.progress.failure('failing test')],
-                        [{passed: false,
-                          name: 'failing test',
-                          result: 'error'}]),
-                testRun("one passing, one failing",
-                        [passingSpec,
-                         failingSpec],
-                        [tattler.progress.started('simple test'),
-                         tattler.progress.started('failing test'),
-                         tattler.progress.success('simple test'),
-                         tattler.progress.failure('failing test')],
-                        [{passed: true,
-                          name: 'simple test',
-                          result: 'result'},
-                         {passed: false,
-                          name: 'failing test',
-                          result: 'error'}]
-                       )])).
-                progress(function(progress){
-                    if (progress.status !== 'started') {
-                        console.log("%s %s", progress.status === 'success'? '.':'F', progress.name);
-                    }
-                }).done(function(result){
-                    tattler.streamsFn.each(result, function(value){
-                        console.log("result ", value);
-                    });
-/*                    var summary = result.reduce(function(previous, current) {
-                        var sum = previous;
-                        if (current.passed) {
-                            sum.passed += 1;
-                        }
-                        else {
-                            sum.failed += 0;
-                        }
-                        return sum;
-                    }, {passed:0, failed:0});
-                    result.filter(
-                        function(elem){
-                            return !elem.passed;
-                        }).
-                        forEach(function(elem) {
-                            console.log("failed: ", elem.name);
-                            console.log(elem.result);
+            tattler.streamsFn.fold(
+                tattler.run([
+                    testRun("spec with a name",
+                            passingSpecWithAName,
+                            {'passingSpecWithAName':{passed: true,
+                                                     name: 'passingSpecWithAName',
+                                                     result: 'a result'}}),
+                    testRun("one passing",
+                            passingSpec,
+                            {'simple test':{
+                                passed: true,
+                                name: 'simple test',
+                                result: 'result'}
+                            }),
+                    testRun("one failing",
+                            failingSpec,
+                            {'failing test':{passed: false,
+                              name: 'failing test',
+                              result: 'error'}}),
+                    testRun("one passing, one failing",
+                            [passingSpec,
+                             failingSpec],
+                            {'simple test': {passed: true,
+                                             name: 'simple test',
+                                             result: 'result'},
+                             'failing test':{passed: false,
+                                             name: 'failing test',
+                                             result: 'error'}
+                            }
+                           )]),
+                
+                function(eventuallyAcc, eventuallyResult){
+                    return Q.all([eventuallyAcc, eventuallyResult]).spread(
+                        function(sum, current){
+                            if (current.passed) {
+                                sum.passed += 1;
+                            }
+                            else {
+                                console.log("Failure: ", current);
+                                sum.failed += 1;
+                            }
+                            return sum;
                         });
-                    console.log();
-                    console.log(summary);*/
+                },
+                Q.when({
+                    failed: 0,
+                    passed: 0
                 })
+            ).done(function(summary){
+                Q.when(summary).then(function(s){
+                    console.log("summary:", s);
+                });
+            });
         }
     }
     if (typeof module !== 'undefined' && module.exports) {
@@ -134,7 +131,9 @@
         specs(
             Q,
             tattler(Q),
-            {deepEqual:deepEqual}
+            {deepEqual:deepEqual},
+            streams, 
+            streamsFn
         )
     }
 })();

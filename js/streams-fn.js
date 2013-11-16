@@ -49,11 +49,14 @@ nnn        }
         }
         
         var each = function(nxt, callback) {
-            return when(nxt).then(
+            return when(nxt).done(
                 function(val) {
-                    callback(value(val));
-                    if(val !== EOF) {
-                        each(next(val), callback);
+                    if(val !== phloem.EOF) {
+                        callback(phloem.value(val));
+                        each(phloem.next(val), callback);
+                    }
+                    else {
+                        callback(phloem.EOF);
                     }
                 }
             )
@@ -87,12 +90,27 @@ nnn        }
             };
         }
 
+        var fold = function(str, fn, initial) {
+            var deferred = when.defer();
+            var acc = initial;
+            each(str, function(value){
+                if(value !== phloem.EOF) {
+                    acc = fn(acc, value);
+                }
+                else  {
+                    deferred.resolve(acc);
+                }
+            });
+            return deferred.promise;
+        }
+
         return {
             drop: drop,
             take: take,
             iterate: iterate,
             map: map,
             each: each,
+            fold: fold,
             filter: filter
         }
      }
@@ -100,7 +118,6 @@ nnn        }
         return define(['streams', 'q'], streamsFn)
     }
     else if(typeof module !== 'undefined' && module.exports) {
-        console.log("streamsfn");
         module.exports = streamsFn(require('./streams'), require('q'));
     }
     else {
