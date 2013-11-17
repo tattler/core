@@ -13,6 +13,14 @@ var tattler = function(Q, _, streams, streamsFn) {
         success: function(name){return status(name, 'success');},
         failure: function(name){return status(name, 'failure');}
     };
+
+    var task = function(id, fn) {
+        var run = function(){
+            return fn();
+        }
+        run.id = id;
+        return run;
+    };
     
     var resolveJobStream = function(jobs) {
         if(streams.isCons(jobs)) {
@@ -22,6 +30,12 @@ var tattler = function(Q, _, streams, streamsFn) {
         result = str.read.next();
         if(_.isArray(jobs)) {
             _.each(jobs, str.push);
+            str.close();
+        }
+        else if(_.isObject(jobs) && !_.isFunction(jobs)){
+            _(jobs).pairs().each(function(pair){
+               str.push(task(pair[0], pair[1]));
+            });
             str.close();
         }
         else {
@@ -51,13 +65,7 @@ var tattler = function(Q, _, streams, streamsFn) {
         });
     };
     
-    var task = function(id, fn) {
-        var run = function(){
-            return fn();
-        }
-        run.id = id;
-        return run;
-    }
+
 
     var res =  {
         streams:streams,

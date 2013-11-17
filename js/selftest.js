@@ -1,11 +1,13 @@
 (function() {
     {
         var specs = function(Q, tattler, assert) {
-            var passingSpec =  tattler.task("simple test", function(){
+            var passingSpecBody = function(){
                 var deferred = Q.defer();
                 deferred.resolve("result");
                 return deferred.promise;
-            });
+            };
+
+            var passingSpec =  tattler.task("simple test", passingSpecBody);
 
             var failingSpec =  tattler.task("failing test", function(){
                 var deferred = Q.defer();
@@ -74,7 +76,18 @@
                                              name: 'failing test',
                                              result: 'error'}
                             }
-                           )]),
+                           ),
+                    testRun("run passing spec in object",
+                            {'spec one': passingSpecBody},
+                            {'spec one': 
+                             {
+                                 passed:true,
+                                 name: 'spec one',
+                                 result: 'result'
+                             }
+                            }
+                           )
+                ]),
                 
                 function(eventuallyAcc, eventuallyResult){
                     return Q.all([eventuallyAcc, eventuallyResult]).spread(
