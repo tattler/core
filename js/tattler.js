@@ -14,7 +14,11 @@ var tattler = function(Q, _, streams, streamsFn) {
         failure: function(name){return status(name, 'failure');}
     };
 
-    var task = function(id, fn) {
+    var task = function(id, deps, fn) {
+        if(fn === undefined) {
+            fn = deps;
+            deps = [];
+        }
         var run = function(){
             return fn();
         }

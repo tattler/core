@@ -21,6 +21,10 @@
                 return deferred.promise;
             }
 
+            var dependsOnFailingSpec = tattler.task("depends on failing", [failingSpec], function(fromDependent){
+                Q.resolve("will never happen");
+            });
+
             function testRun(name, specs, expectedResults) {
                 return tattler.task(name, function() {
                     return tattler.streamsFn.fold(
@@ -86,7 +90,20 @@
                                  result: 'result'
                              }
                             }
-                           )
+                           ),
+                    testRun("run dependent",
+                           [dependsOnFailingSpec],
+                           { 
+                               'failing test':{
+                                   passed: false,
+                                   name: 'failing test',
+                                   result: 'error'
+                               },
+                               'depends on failing': {
+                                   passed:'skipped',
+                                   name:'depends on failing'
+                               }
+                           })
                 ]),
                 
                 function(eventuallyAcc, eventuallyResult){
