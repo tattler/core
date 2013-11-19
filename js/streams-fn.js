@@ -34,20 +34,7 @@
             return iteration(iterator(initial));
         }
 
-        var map = function(stream, fn) {
-            var iteration = function(stream) {
-                return when(stream).then(function(resolved) {
-                    if(resolved === phloem.EOF) return resolved;
-                    return phloem.cons(
-                        fn(phloem.value(resolved)), 
-                        function() {
-                            return iteration(phloem.next(resolved));
-                        });
-                });
-            }
-            return iteration(stream);
-        }
-        
+
         var each = function(nxt, callback) {
             return when(nxt).done(
                 function(val) {
@@ -60,6 +47,32 @@
                     }
                 }
             )
+        }
+
+        var flatten = function(stream) {
+            var result = phloem.stream();
+            each(stream, function(nxt){
+                each(nxt, function(elem) {
+                    if(elem !== phloem.EOF) {
+                        result.push(elem);
+                    }
+                });
+            });
+            return result.read.next()
+        }
+
+        var map = function(stream, fn) {
+            var iteration = function(stream) {
+                return when(stream).then(function(resolved) {
+                    if(resolved === phloem.EOF) return resolved;
+                    return phloem.cons(
+                        fn(phloem.value(resolved)), 
+                        function() {
+                            return iteration(phloem.next(resolved));
+                        });
+                });
+            }
+            return iteration(stream);
         }
 
         var filter = function(next, condition) {
@@ -109,6 +122,7 @@
             take: take,
             iterate: iterate,
             map: map,
+            flatten:flatten,
             each: each,
             fold: fold,
             filter: filter
