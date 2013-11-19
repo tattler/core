@@ -75,6 +75,10 @@
             return iteration(stream);
         }
 
+        var flatMap = function(stream, fn) {
+            return flatten(map(stream, fn));
+        }
+
         var filter = function(next, condition) {
             var passed = stream();
             var rejected = stream();
@@ -122,6 +126,7 @@
             take: take,
             iterate: iterate,
             map: map,
+            flatMap:flatMap,
             flatten:flatten,
             each: each,
             fold: fold,
