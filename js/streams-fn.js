@@ -133,11 +133,10 @@
             filter: filter
         }
      }
-    if(typeof define !== 'undefined') {
-        return define(['streams', 'q'], streamsFn)
+    if (typeof define !== 'undefined') {
+        return define(['streams', 'q'], streamsFn);
     }
-    else if(typeof module !== 'undefined' && module.exports) {
-
+    else if (typeof module !== 'undefined' && module.exports) {
         module.exports = streamsFn(require('./streams'), require('q'));
     }
     else {

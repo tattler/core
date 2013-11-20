@@ -113,7 +113,10 @@
             });
         }
     }
-    if (typeof module !== 'undefined' && module.exports) {
+    if (typeof define !== 'undefined') {
+	define(['q', 'tattler', 'assert-amd'], specs);
+    }
+    else if (typeof module !== 'undefined' && module.exports) {
         specs(
             require('q'),
             require('./tattler'),

@@ -77,7 +77,9 @@ var tattler = function(Q, _, streams, streamsFn) {
     return res;
 };
 
-if(typeof module !== 'undefined' && module.exports) {
+if (typeof define !== 'undefined') {
+    define(['q', 'lodash', 'streams', 'streams-fn'], tattler);
+} else if (typeof module !== 'undefined' && module.exports) {
     module.exports = tattler(
         require('q'), 
         require('lodash'), 
