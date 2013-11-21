@@ -66,7 +66,7 @@
             result.push(stream1);
             result.push(stream2);
             result.close();
-            return resul = flatten(result.read.next());
+            return flatten(result.read.next());
         }
 
         var map = function(stream, fn) {
@@ -138,6 +138,7 @@
             flatten:flatten,
             each: each,
             fold: fold,
+            concat:concat,
             filter: filter
         }
      }
