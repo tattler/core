@@ -51,14 +51,27 @@
 
         var flatten = function(stream) {
             var result = phloem.stream();
-            each(stream, function(nxt){
-                each(nxt, function(elem) {
-                    if(elem !== phloem.EOF) {
-                        result.push(elem);
+            function iter(outer) {
+                return when(outer).done(
+                    function(val) {
+                        if(val !== phloem.EOF) {
+                            each(phloem.value(val), function(elem){
+                                if(elem !== phloem.EOF) {
+                                    result.push(elem);
+                                }
+                                else {
+                                    iter(phloem.next(val));
+                                }
+                            });
+                        }
+                        else {
+                            result.push(phloem.EOF)
+                        }
                     }
-                });
-            });
-            return result.read.next()
+                )
+            }
+            iter(stream);
+            return result.read.next();
         }
 
         var concat = function(stream1, stream2)  {

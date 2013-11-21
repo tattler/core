@@ -107,6 +107,7 @@
                 ]),
                 
                 function(eventuallyAcc, eventuallyResult){
+                    Q(eventuallyResult).finally(function(r){console.log("r", log)});
                     return Q.all([eventuallyAcc, eventuallyResult]).spread(
                         function(sum, current){
                             if (current.passed) {

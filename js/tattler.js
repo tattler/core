@@ -14,15 +14,21 @@ var tattler = function(Q, _, streams, streamsFn) {
         failure: function(name){return status(name, 'failure');}
     };
 
+    function waitForTask(task) {
+        return task();
+    }
+
     var task = function(id, deps, fn) {
         if(fn === undefined) {
             fn = deps;
             deps = [];
         }
+        var pending = _.map(deps, waitForTask);
         var run = function(){
-            return fn();
+            return Q.all(pending).spread(fn);
         }
         run.id = id;
+        run.prereqs = deps;
         return run;
     };
     
@@ -52,20 +58,31 @@ var tattler = function(Q, _, streams, streamsFn) {
     var run = function(jobs){ 
         return Q.when(jobs).then(function(resolvedJobs) {
             var stream = resolveJobStream(resolvedJobs);
-            return streamsFn.map(stream, function(job){
+            return streamsFn.map( streamsFn.flatMap(stream, function(job){
+                var reportResults = streams.stream();
+                var results = reportResults.read.next();
                 if(job) {
+                    if(job.prereqs) {
+                        streamsFn.each(run(job.prereqs), reportResults.push);
+                    }
                     var name = job.id || job.name;
                     var result = job();
-                    return Q.when(result).
+                    reportResults.push(
+                    Q.when(result).
                         then(
                             function(res){
                                 return {name:name, passed:true, result:res};
                             },
                             function(res){
                                 return {name:name, passed:false, result:res}
-                            })
+                            }));
                 }
-            });
+                reportResults.close();
+                return results;
+            }),
+                                  function(res) {
+                                      return res
+                                  });
         });
     };
     
