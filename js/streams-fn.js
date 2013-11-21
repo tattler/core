@@ -61,6 +61,14 @@
             return result.read.next()
         }
 
+        var concat = function(stream1, stream2)  {
+            var result = phloem.stream();
+            result.push(stream1);
+            result.push(stream2);
+            result.close();
+            return resul = flatten(result.read.next());
+        }
+
         var map = function(stream, fn) {
             var iteration = function(stream) {
                 return when(stream).then(function(resolved) {
