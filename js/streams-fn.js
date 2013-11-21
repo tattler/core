@@ -51,6 +51,7 @@
 
         var flatten = function(stream) {
             var result = phloem.stream();
+            var res = result.read.next();
             function iter(outer) {
                 return when(outer).done(
                     function(val) {
@@ -65,24 +66,26 @@
                             });
                         }
                         else {
-                            result.push(phloem.EOF)
+                            result.close();
                         }
                     }
                 )
             }
             iter(stream);
-            return result.read.next();
+            return res;
         }
+
 
         var concat = function(stream1, stream2)  {
             var result = phloem.stream();
+            var res = result.read.next();
             result.push(stream1);
             result.push(stream2);
             result.close();
-            return flatten(result.read.next());
+            return flatten(res);
         }
 
-        var map = function(stream, fn) {
+        var map = function(streamin, fn) {
             var iteration = function(stream) {
                 return when(stream).then(function(resolved) {
                     if(resolved === phloem.EOF) return resolved;
@@ -93,11 +96,12 @@
                         });
                 });
             }
-            return iteration(stream);
+            return iteration(streamin);
         }
 
         var flatMap = function(stream, fn) {
-            return flatten(map(stream, fn));
+            var flat = map(stream, fn);
+            return flatten(flat);
         }
 
         var filter = function(next, condition) {

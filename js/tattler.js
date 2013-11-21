@@ -58,12 +58,12 @@ var tattler = function(Q, _, streams, streamsFn) {
     var run = function(jobs){ 
         return Q.when(jobs).then(function(resolvedJobs) {
             var stream = resolveJobStream(resolvedJobs);
-            return streamsFn.map( streamsFn.flatMap(stream, function(job){
+            return  streamsFn.flatMap(stream, function(job){
                 var reportResults = streams.stream();
                 var results = reportResults.read.next();
                 if(job) {
                     if(job.prereqs) {
-                        streamsFn.each(run(job.prereqs), reportResults.push);
+                        results = streamsFn.concat(run(job.prereqs), results);
                     }
                     var name = job.id || job.name;
                     var result = job();
@@ -79,10 +79,7 @@ var tattler = function(Q, _, streams, streamsFn) {
                 }
                 reportResults.close();
                 return results;
-            }),
-                                  function(res) {
-                                      return res
-                                  });
+            })
         });
     };
     
