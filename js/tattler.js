@@ -55,6 +55,35 @@ var tattler = function(Q, _, streams, streamsFn) {
         return result;
     };
 
+    function resolvePrereqs(run, job, name, results) {
+        var prereqsOk;
+        if(job.prereqs) {
+            var prereqResults = run(job.prereqs);
+            return {
+                prereqsOk: streamsFn.fold(prereqResults,
+                                       function(acc, current){
+                                           return Q(acc).
+                                               then(function(j){
+                                                   var theJob = j;
+                                                   return Q(current).then(
+                                                       function(result){
+                                                           return result.passed ? Q.resolve(theJob) : Q.reject(theJob);
+                                                       }
+                                                   )
+                                               })
+                                       },
+                                       Q.resolve(job)),
+                results: streamsFn.concat(prereqResults, results)
+            }
+        }
+        else {
+           return  {
+               prereqsOk:Q.resolve(job),
+               results:results
+           }
+        }
+    }
+
     var run = function(jobs){ 
         return Q.when(jobs).then(function(resolvedJobs) {
             var stream = resolveJobStream(resolvedJobs);
@@ -62,22 +91,28 @@ var tattler = function(Q, _, streams, streamsFn) {
                 var reportResults = streams.stream();
                 var results = reportResults.read.next();
                 if(job) {
-                    if(job.prereqs) {
-                        results = streamsFn.concat(run(job.prereqs), results);
-                    }
                     var name = job.id || job.name;
-                    var result = job();
-                    reportResults.push(
-                    Q.when(result).
-                        then(
-                            function(res){
-                                return {name:name, passed:true, result:res};
-                            },
-                            function(res){
-                                return {name:name, passed:false, result:res}
-                            }));
+                    var prereqs = resolvePrereqs(run, job, name, results);
+                    results = prereqs.results;
+
+                    Q(prereqs.prereqsOk).then(function(job){
+                        var result = job();
+                        reportResults.push(
+                            Q.when(result).
+                                then(
+                                    function(res){
+                                        return {name:name, passed:true, result:res};
+                                    },
+                                    function(res){
+                                        return {name:name, passed:false, result:res}
+                                    }));
+
+                    }, function(job){
+                        reportResults.push(Q.reject( {name:name, passed:'skipped'}));
+                    }).fin(function(){
+                        reportResults.close();
+                    });
                 }
-                reportResults.close();
                 return results;
             })
         });
