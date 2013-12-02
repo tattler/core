@@ -30,8 +30,6 @@
             });
 
             var dependsOnManyPassingSpecs = tattler.task("depends on two passing", [passingSpec, passingSpecWithAName], function(fromDependent, other){
-                console.log("Passed???", fromDependent, other);
-
                 return Q.resolve("From dependent: " + fromDependent+" and "+other);
             });
 
