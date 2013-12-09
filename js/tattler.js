@@ -20,16 +20,30 @@ var tattler = function(Q, _, streams, streamsFn) {
 
     var task = function(id, deps, fn) {
         if(fn === undefined) {
-            fn = deps;
-            deps = [];
+            if(_.isArray(id)) {
+                fn = deps;
+                deps = id;
+                id = 'anonymous';
+            }
+            else{
+                fn = deps;
+                deps = [];
+            }
         }
-        var pending = _.map(deps, waitForTask);
-        var run = function(){
-            return Q.all(pending).spread(fn);
+        if(_.isFunction(fn))  {
+            var pending = _.map(deps, waitForTask);
+            var run = function(){
+                return Q.all(pending).spread(fn);
+            }
+            run.id = id;
+            run.prereqs = deps;
+            return run;
         }
-        run.id = id;
-        run.prereqs = deps;
-        return run;
+        if(_.isObject(fn)) {
+            return _(fn).pairs().map(function(pair){
+                return(task(pair[0], deps, pair[1]));
+            }).value();
+        }
     };
     
     var resolveJobStream = function(jobs) {
@@ -39,7 +53,15 @@ var tattler = function(Q, _, streams, streamsFn) {
         str = streams.stream();
         result = str.read.next();
         if(_.isArray(jobs)) {
-            _.each(jobs, str.push);
+            _.each(jobs, 
+                   function(job){
+                       if(_.isArray(job)) {
+                           result = resolveJobStream(job);
+                       }
+                       else{
+                           str.push(job);
+                       }
+                   });
             str.close();
         }
         else if(_.isObject(jobs) && !_.isFunction(jobs)){
