@@ -143,7 +143,29 @@
                                     passed:true,
                                     result: 'From dependent: result and a result'
                                 }
+                            }),
+                    testRun("run passing object dependency",
+                            [tattler.task([passingSpecWithAName],{
+                                'dep1':function(depr1){return Q.resolve("dep1 "+depr1)},
+                                'dep2':function(depr2){return Q.resolve("dep2 "+depr2)}
+                            })],
+                            {
+                                'passingSpecWithAName':{
+                                    name: 'passingSpecWithAName',
+                                    passed: true,
+                                    result: 'a result'},
+                                'dep1': {
+                                    name:'dep1',
+                                    passed:true,
+                                    result: 'dep1 a result'
+                                },
+                                'dep2': {
+                                    name:'dep2',
+                                    passed:true,
+                                    result: 'dep2 a result'
+                                }
                             })
+
                 ]),
                 
                 function(eventuallyAcc, eventuallyResult){

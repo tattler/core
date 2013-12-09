@@ -53,7 +53,7 @@
         }
 
         var isCons = function(maybeCons) {
-            maybeCons.value && maybeCons.next ? maybeCons : false;
+            return maybeCons.value && maybeCons.next ? maybeCons : false;
         }
 
         return {
