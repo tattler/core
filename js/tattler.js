@@ -50,93 +50,39 @@ var tattler = function(Q, _, streams, streamsFn) {
         if(streams.isCons(jobs)) {
             return jobs;
         };
-        str = streams.stream();
-        result = str.read.next();
         if(_.isArray(jobs)) {
-            _.each(jobs, 
-                   function(job){
-                       if(_.isArray(job)) {
-                           result = resolveJobStream(job);
-                       }
-                       else{
-                           str.push(job);
-                       }
-                   });
-            str.close();
+            return resolveJobStream(streamsFn.forArray(jobs));
         }
-        else if(_.isObject(jobs) && !_.isFunction(jobs)){
-            _(jobs).pairs().each(function(pair){
-               str.push(task(pair[0], pair[1]));
-            });
-            str.close();
+        if(_.isFunction(jobs)){
+            return streamsFn.forArray([jobs]);
         }
-        else {
-            str.push(jobs);
-            str.close();
-        }
-        return result;
+        console.log("jobs must be array or stream ", jobs);
+        throw Error("Jobs must be array or stream!");
     };
 
-    function resolvePrereqs(run, job, name, results) {
-        var prereqsOk;
-        if(job.prereqs) {
-            var prereqResults = run(job.prereqs);
-            return {
-                prereqsOk: streamsFn.fold(prereqResults,
-                                       function(acc, current){
-                                           return Q(acc).
-                                               then(function(j){
-                                                   var theJob = j;
-                                                   return Q(current).then(
-                                                       function(result){
-                                                           return result.passed ? Q.resolve(theJob) : Q.reject(theJob);
-                                                       }
-                                                   )
-                                               })
-                                       },
-                                       Q.resolve(job)),
-                results: streamsFn.concat(prereqResults, results)
-            }
-        }
-        else {
-           return  {
-               prereqsOk:Q.resolve(job),
-               results:results
-           }
-        }
-    }
 
     var run = function(jobs){ 
         return Q.when(jobs).then(function(resolvedJobs) {
             var stream = resolveJobStream(resolvedJobs);
-            return  streamsFn.flatMap(stream, function(job){
-                var reportResults = streams.stream();
-                var results = reportResults.read.next();
-                if(job) {
-                    var name = job.id || job.name;
-                    var prereqs = resolvePrereqs(run, job, name, results);
-                    results = prereqs.results;
-
-                    Q(prereqs.prereqsOk).then(function(job){
-                        var result = job();
-                        reportResults.push(
-                            Q.when(result).
-                                then(
-                                    function(res){
-                                        return {name:name, passed:true, result:res};
-                                    },
-                                    function(res){
-                                        return {name:name, passed:false, result:res}
-                                    }));
-
-                    }, function(job){
-                        reportResults.push(Q.reject( {name:name, passed:'skipped'}));
-                    }).fin(function(){
-                        reportResults.close();
-                    });
-                }
-                return results;
-            })
+            return streamsFn.map(stream,
+                          function(job){
+                              return Q(job()).then(
+                                  function(passed){
+                                      return {
+                                          passed: true,
+                                          name: job.name,
+                                          result: passed
+                                      }
+                                  },
+                                  function(failed){
+                                      return {
+                                          name: job.name,
+                                          result: failed,
+                                          passed: false
+                                      }
+                                  }
+                              );
+                          });
         });
     };
     
@@ -153,11 +99,11 @@ var tattler = function(Q, _, streams, streamsFn) {
 };
 
 if (typeof define !== 'undefined') {
-    define(['q', 'lodash', 'streams', 'streams-fn'], tattler);
+    define(['q', 'lodash', 'consjs', 'fn'], tattler);
 } else if (typeof module !== 'undefined' && module.exports) {
     module.exports = tattler(
         require('q'), 
         require('lodash'), 
-        require('./streams'), 
-        require('./streams-fn'));
+        require('./consjs'), 
+        require('./consjs/fn'));
 };

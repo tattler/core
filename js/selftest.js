@@ -59,14 +59,13 @@
             }
 
 
-            tattler.streamsFn.fold(
-                tattler.run([
+            var testsToRun = tattler.run([
                     testRun("spec with a name",
                             passingSpecWithAName,
                             {'passingSpecWithAName':{passed: true,
                                                      name: 'passingSpecWithAName',
                                                      result: 'a result'}}),
-                    testRun("one passing",
+/*                    testRun("one passing",
                             passingSpec,
                             {'simple test':{
                                 passed: true,
@@ -88,8 +87,8 @@
                                              name: 'failing test',
                                              result: 'error'}
                             }
-                           ),
-                    testRun("run passing spec in object",
+                           ),*/
+/*                    testRun("run passing spec in object",
                             {'spec one': passingSpecBody},
                             {'spec one': 
                              {
@@ -98,8 +97,8 @@
                                  result: 'result'
                              }
                             }
-                           ),
-                    testRun("run failing dependent",
+                           ),*/
+/*                    testRun("run failing dependent",
                             [dependsOnFailingSpec],
                             { 
                                 'failing test':{
@@ -111,8 +110,8 @@
                                     passed:'skipped',
                                     name:'depends on failing'
                                 }
-                            }),
-                    testRun("run passing dependent",
+                            }),*/
+/*                    testRun("run passing dependent",
                             [dependsOnPassingSpec],
                             {
                                 'simple test':{
@@ -125,8 +124,8 @@
                                     name:'depends on passing',
                                     result: 'From dependent: result'
                                 }
-                            }),
-                    testRun("run passing depends on many",
+                            }),*/
+/*                    testRun("run passing depends on many",
                             [dependsOnManyPassingSpecs],
                             {
                                 'simple test':{
@@ -143,8 +142,8 @@
                                     passed:true,
                                     result: 'From dependent: result and a result'
                                 }
-                            }),
-                    testRun("run passing object dependency",
+                            }),*/
+/*                    testRun("run passing object dependency",
                             [tattler.task([passingSpecWithAName],{
                                 'dep1':function(depr1){return Q.resolve("dep1 "+depr1)},
                                 'dep2':function(depr2){return Q.resolve("dep2 "+depr2)}
@@ -164,9 +163,12 @@
                                     passed:true,
                                     result: 'dep2 a result'
                                 }
-                            })
+                            })*/
 
-                ]),
+                ]);
+            
+            tattler.streamsFn.fold(
+                {next:function(){return testsToRun;}},
                 
                 function(eventuallyAcc, eventuallyResult){
                     Q(eventuallyResult).finally(function(r){console.log("r", log)});
@@ -176,7 +178,6 @@
                                 sum.passed += 1;
                             }
                             else {
-                                console.log("Failure: ", current);
                                 sum.failed += 1;
                             }
                             return sum;
@@ -225,7 +226,7 @@
         }
         specs(
             Q,
-            tattler(Q, _, streams, streamsFn),
+            tattler(Q, _, cons, cons.fn),
             {deepEqual:deepEqual}
         )
     }
