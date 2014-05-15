@@ -40,10 +40,11 @@
                         function(acc, result){
                             return Q.when(acc).then(
                                 function(a){
+
                                     return Q.when(result).then( 
                                         function(r){
                                             a[r.name] = r;
-                                            return acc;
+                                            return a;
                                         },
                                         function(error) {
                                             a[error.name] = error;
@@ -53,7 +54,7 @@
                         },
                         Q.when({})
                     ).then(function(allResults){
-                        assert.deepEqual(allResults, expectedResults);
+                        return assert.deepEqual(expectedResults, allResults);
                     });
                 });
             }
@@ -65,7 +66,7 @@
                             {'passingSpecWithAName':{passed: true,
                                                      name: 'passingSpecWithAName',
                                                      result: 'a result'}}),
-/*                    testRun("one passing",
+                    testRun("one passing",
                             passingSpec,
                             {'simple test':{
                                 passed: true,
@@ -87,8 +88,8 @@
                                              name: 'failing test',
                                              result: 'error'}
                             }
-                           ),*/
-/*                    testRun("run passing spec in object",
+                           ),
+                    testRun("run passing spec in object",
                             {'spec one': passingSpecBody},
                             {'spec one': 
                              {
@@ -97,7 +98,7 @@
                                  result: 'result'
                              }
                             }
-                           ),*/
+                           ),
 /*                    testRun("run failing dependent",
                             [dependsOnFailingSpec],
                             { 
@@ -171,7 +172,9 @@
                 {next:function(){return testsToRun;}},
                 
                 function(eventuallyAcc, eventuallyResult){
-                    Q(eventuallyResult).finally(function(r){console.log("r", log)});
+                    Q(eventuallyResult).then(
+                        function(r){console.log("success: ", r)}, 
+                        function(r){console.log("error  : ", r)});
                     return Q.all([eventuallyAcc, eventuallyResult]).spread(
                         function(sum, current){
                             if (current.passed) {

@@ -56,10 +56,22 @@ var tattler = function(Q, _, streams, streamsFn) {
         if(_.isFunction(jobs)){
             return streamsFn.forArray([jobs]);
         }
+        if(_.isObject(jobs)) {
+            return streamsFn.map(
+                streamsFn.forArray(_.pairs(jobs)),
+                function(pair) {
+                    console.log("pair: ", pair);
+                    return task(pair[0], pair[1]);
+                }
+            );
+        }
         console.log("jobs must be array or stream ", jobs);
         throw Error("Jobs must be array or stream!");
     };
 
+    function name(job) {
+        return job.name || job.id;
+    }
 
     var run = function(jobs){ 
         return Q.when(jobs).then(function(resolvedJobs) {
@@ -70,13 +82,13 @@ var tattler = function(Q, _, streams, streamsFn) {
                                   function(passed){
                                       return {
                                           passed: true,
-                                          name: job.name,
+                                          name: name(job),
                                           result: passed
                                       }
                                   },
                                   function(failed){
                                       return {
-                                          name: job.name,
+                                          name: name(job),
                                           result: failed,
                                           passed: false
                                       }
