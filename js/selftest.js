@@ -99,7 +99,7 @@
                              }
                             }
                            ),
-/*                    testRun("run failing dependent",
+                    testRun("run failing dependent",
                             [dependsOnFailingSpec],
                             { 
                                 'failing test':{
@@ -111,7 +111,7 @@
                                     passed:'skipped',
                                     name:'depends on failing'
                                 }
-                            }),*/
+                            }),
 /*                    testRun("run passing dependent",
                             [dependsOnPassingSpec],
                             {
@@ -172,9 +172,8 @@
                 {next:function(){return testsToRun;}},
                 
                 function(eventuallyAcc, eventuallyResult){
-                    Q(eventuallyResult).then(
-                        function(r){console.log("success: ", r)}, 
-                        function(r){console.log("error  : ", r)});
+                    Q(eventuallyResult).done(function(r){
+                        console.log(r.passed ? "success: " : "failure: ", r)});
                     return Q.all([eventuallyAcc, eventuallyResult]).spread(
                         function(sum, current){
                             if (current.passed) {
@@ -209,13 +208,15 @@
     }
     else {
         function deepEqual(expected, actual, path){
+            path = path || "";
             if (typeof expected !== typeof actual) {
-                throw new Error(expected + " and " + actual + " in " +path+" don't have the same type");
+                console.log("different types: ", expected, " <> ", actual);
+                throw new Error(expected + " and " + actual + " in [" +path+"] don't have the same type.");
             }
             if (typeof expected === 'object') {
                 var key;
                 for (key in expected) {
-                    deepEqual(expected[key], actual[key], (path || "") +"."+key);
+                    deepEqual(expected[key], actual[key], expected, actual, (path || "") +"."+key);
                 }
             }
             else if (expected !== actual) {

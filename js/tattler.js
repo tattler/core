@@ -47,6 +47,9 @@ var tattler = function(Q, _, streams, streamsFn) {
     };
     
     var resolveJobStream = function(jobs) {
+        if(jobs === streams.EOF) {
+            return streams.EOF;
+        }
         if(streams.isCons(jobs)) {
             return jobs;
         };
@@ -60,23 +63,69 @@ var tattler = function(Q, _, streams, streamsFn) {
             return streamsFn.map(
                 streamsFn.forArray(_.pairs(jobs)),
                 function(pair) {
-                    console.log("pair: ", pair);
                     return task(pair[0], pair[1]);
                 }
             );
         }
         console.log("jobs must be array or stream ", jobs);
-        throw Error("Jobs must be array or stream!");
+        throw Error("Jobs must be array or stream! "+jobs);
     };
 
     function name(job) {
         return job.name || job.id;
     }
 
+    function resolvePreReqs(stream) {
+        var maybePrereqs = streams.EOF; 
+        function iterate(maybeStr) {
+            return Q(maybeStr).then(
+                function(str){
+                    if (str === streams.EOF) {
+                        return streams.EOF;
+                    }
+                    var currentValue = streams.value(str);
+                    maybePrereqs = streamsFn.seekToValue(resolveJobStream(currentValue.prereqs || []));
+                    
+
+                    return Q(streamsFn.fold(maybePrereqs,
+                                          function(acc, current){
+                                              return acc.concat(current)
+                                          },
+                                           []
+                                          )).then(
+                        function(prereqs) {
+                            var pandp = _.map(prereqs, 
+                                              function(prereq){
+                                                  var deferred = Q.defer();
+                                                  function runPrereq(){
+                                                      return Q(prereq()).then(deferred.resolve, deferred.reject);
+                                                  }
+                                                  return {
+                                                      task:runPrereq(),
+                                                      promise: deferred.promise
+                                                  }
+                                              });
+                            console.log("task and promise ", pandp);
+                            var delegatedPrereqs = _.pick(pandp, 'task');
+                            return streamsFn.concat(
+                                streamsFn.forArray(delegatedPrereqs),
+                                streams.cons(currentValue, 
+                                        function(){
+                                            return iterate(streams.next(str));
+                                        }));
+                        }
+);
+                });
+        };
+
+        return {next: function(){return iterate(streamsFn.seekToValue(stream))}};
+    };
+
     var run = function(jobs){ 
         return Q.when(jobs).then(function(resolvedJobs) {
             var stream = resolveJobStream(resolvedJobs);
-            return streamsFn.map(stream,
+            var prereqStream = resolvePreReqs(stream);
+            return streamsFn.map(prereqStream,
                           function(job){
                               return Q(job()).then(
                                   function(passed){
