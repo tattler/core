@@ -54,6 +54,7 @@
                         },
                         Q.when({})
                     ).then(function(allResults){
+                        console.log("allResults: ", allResults);
                         return assert.deepEqual(expectedResults, allResults);
                     });
                 });
@@ -207,16 +208,17 @@
         )
     }
     else {
-        function deepEqual(expected, actual, path){
+        function deepEqual(expected, actual, path, actualParent){
             path = path || "";
             if (typeof expected !== typeof actual) {
-                console.log("different types: ", expected, " <> ", actual);
+                console.log("different types [",path,"]: ", expected, " <> ", actual);
+                console.log("Actual parent: ", actualParent);
                 throw new Error(expected + " and " + actual + " in [" +path+"] don't have the same type.");
             }
             if (typeof expected === 'object') {
                 var key;
                 for (key in expected) {
-                    deepEqual(expected[key], actual[key], expected, actual, (path || "") +"."+key);
+                    deepEqual(expected[key], actual[key], (path || "") +"."+key, actual);
                 }
             }
             else if (expected !== actual) {

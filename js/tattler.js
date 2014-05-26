@@ -75,8 +75,15 @@ var tattler = function(Q, _, streams, streamsFn) {
         return job.name || job.id;
     }
 
+    var TATTLER_SKIPPED = '__TATTLER__SKIPPED';
     function resolvePreReqs(stream) {
         var maybePrereqs = streams.EOF; 
+        function skipped(error) {
+            var result = {};
+            result[TATTLER_SKIPPED] = error;
+            return result;
+        }
+
         function iterate(maybeStr) {
             return Q(maybeStr).then(
                 function(str){
@@ -97,28 +104,48 @@ var tattler = function(Q, _, streams, streamsFn) {
                             var pandp = _.map(prereqs, 
                                               function(prereq){
                                                   var deferred = Q.defer();
-                                                  function runPrereq(){
-                                                      return Q(prereq()).then(deferred.resolve, deferred.reject);
+                                                  var runPrereq = function(){
+                                                      return Q(prereq()).then(deferred.resolve, 
+                                                                              function(error){
+                                                                                  deferred.reject(error);
+                                                                                  return Q.reject(error);
+                                                                              });
                                                   }
+                                                  runPrereq.id = name(prereq);
                                                   return {
-                                                      task:runPrereq(),
+                                                      task:runPrereq,
                                                       promise: deferred.promise
                                                   }
                                               });
-                            console.log("task and promise ", pandp);
-                            var delegatedPrereqs = _.pick(pandp, 'task');
+                            var delegatedPrereqs = _.pluck(pandp, 'task');
+                            var delegatedResults = _.pluck(pandp, 'promise');
+                            var forDeps = function() {
+                                return Q.all(delegatedResults).then(
+                                    function(){
+                                        return currentValue();
+                                    },
+                                    function(error) {
+                                        return Q.reject(skipped(error));
+                                    })
+                            };
+                            forDeps.id = name(currentValue);
+
                             return streamsFn.concat(
                                 streamsFn.forArray(delegatedPrereqs),
-                                streams.cons(currentValue, 
-                                        function(){
-                                            return iterate(streams.next(str));
-                                        }));
-                        }
-);
+                                streams.cons(
+                                    forDeps, 
+                                    function(){
+                                        return iterate(streams.next(str));
+                                    }));
+                        });
                 });
         };
 
         return {next: function(){return iterate(streamsFn.seekToValue(stream))}};
+    };
+
+    function isSkipped(status) {
+        return _.has(status, TATTLER_SKIPPED);
     };
 
     var run = function(jobs){ 
@@ -133,9 +160,17 @@ var tattler = function(Q, _, streams, streamsFn) {
                                           passed: true,
                                           name: name(job),
                                           result: passed
-                                      }
+                                      };
                                   },
                                   function(failed){
+                                      if(isSkipped(failed)) {
+                                          return {
+                                              name:name(job),
+                                              passed:'skipped',
+                                              result:failed[TATTLER_SKIPPED]
+                                          }
+                                      }
+                                          
                                       return {
                                           name: name(job),
                                           result: failed,
