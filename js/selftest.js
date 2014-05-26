@@ -113,7 +113,7 @@
                                     name:'depends on failing'
                                 }
                             }),
-/*                    testRun("run passing dependent",
+                    testRun("run passing dependent",
                             [dependsOnPassingSpec],
                             {
                                 'simple test':{
@@ -126,8 +126,8 @@
                                     name:'depends on passing',
                                     result: 'From dependent: result'
                                 }
-                            }),*/
-/*                    testRun("run passing depends on many",
+                            }),
+                    testRun("run passing depends on many",
                             [dependsOnManyPassingSpecs],
                             {
                                 'simple test':{
@@ -144,7 +144,7 @@
                                     passed:true,
                                     result: 'From dependent: result and a result'
                                 }
-                            }),*/
+                            }),
 /*                    testRun("run passing object dependency",
                             [tattler.task([passingSpecWithAName],{
                                 'dep1':function(depr1){return Q.resolve("dep1 "+depr1)},

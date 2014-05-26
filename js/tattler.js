@@ -76,6 +76,7 @@ var tattler = function(Q, _, streams, streamsFn) {
     }
 
     var TATTLER_SKIPPED = '__TATTLER__SKIPPED';
+
     function resolvePreReqs(stream) {
         var maybePrereqs = streams.EOF; 
         function skipped(error) {
@@ -105,11 +106,15 @@ var tattler = function(Q, _, streams, streamsFn) {
                                               function(prereq){
                                                   var deferred = Q.defer();
                                                   var runPrereq = function(){
-                                                      return Q(prereq()).then(deferred.resolve, 
-                                                                              function(error){
-                                                                                  deferred.reject(error);
-                                                                                  return Q.reject(error);
-                                                                              });
+                                                      return Q(prereq()).then(
+                                                          function(result){
+                                                              deferred.resolve(result);
+                                                              return result;
+                                                          }, 
+                                                          function(error){
+                                                              deferred.reject(error);
+                                                              return Q.reject(error);
+                                                          });
                                                   }
                                                   runPrereq.id = name(prereq);
                                                   return {
