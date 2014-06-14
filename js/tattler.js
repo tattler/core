@@ -210,6 +210,6 @@ if (typeof define !== 'undefined') {
     module.exports = tattler(
         require('q'), 
         require('lodash'), 
-        require('./consjs'), 
-        require('./consjs/fn'));
+        require('consjs'), 
+        require('consjs/fn'));
 };
