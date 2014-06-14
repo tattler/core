@@ -30,6 +30,7 @@ var tattler = function(Q, _, streams, streamsFn) {
                 deps = [];
             }
         }
+
         if(_.isFunction(fn))  {
             var pending = _.map(deps, waitForTask);
             var run = function(){
@@ -54,7 +55,11 @@ var tattler = function(Q, _, streams, streamsFn) {
             return jobs;
         };
         if(_.isArray(jobs)) {
-            return resolveJobStream(streamsFn.forArray(jobs));
+            return streamsFn.flatten(
+                streamsFn.map(
+                    streamsFn.forArray(jobs),
+                    resolveJobStream
+                ));
         }
         if(_.isFunction(jobs)){
             return streamsFn.forArray([jobs]);
