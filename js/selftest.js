@@ -47,8 +47,9 @@
                     },
                     Q.resolve({}));
                 Q(maybeSummary).done(function(summary){
-                    console.log("summary: ", summary);
-                    deepEqual(summary, expectedResults);
+                    console.log("running: ", name);
+                    deepEqual(expectedResults, summary);
+                    console.log("passed: ", name);
                 });
             }
 
@@ -67,11 +68,12 @@
                         result: 'result'}
                     });
 
-   /*         testRun("one failing",
+            testRun("one failing",
                     failingSpec,
                     {'failing test':{passed: false,
                                      name: 'failing test',
                                      result: 'error'}});
+/*
             testRun("one passing, one failing",
                     [passingSpec,
                      failingSpec],
