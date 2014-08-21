@@ -2,7 +2,7 @@
   "name": "tattler",
   "version": "0.0.0",
   "description": "A run and report framework. Keeps you up to date with what's going on with your code",
-  "main": "index.js",
+  "main": "js/tattler.js",
   "scripts": {
     "test": "bin/tattler selftest"
   },

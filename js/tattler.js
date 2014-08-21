@@ -14,7 +14,7 @@ var tattler = function(Q, _, streams, streamsFn) {
         failure: function(name){return status(name, 'failure');}
     };
 
-    function waitForTask(task) {
+    function runTask(task) {
         return task();
     }
 
@@ -32,8 +32,8 @@ var tattler = function(Q, _, streams, streamsFn) {
         }
 
         if(_.isFunction(fn))  {
-            var pending = _.map(deps, waitForTask);
             var run = function(){
+                var pending = _.map(deps, runTask);            
                 return Q.all(pending).spread(fn);
             }
             run.id = id;
@@ -83,75 +83,7 @@ var tattler = function(Q, _, streams, streamsFn) {
     var TATTLER_SKIPPED = '__TATTLER__SKIPPED';
 
     function resolvePreReqs(stream) {
-        var maybePrereqs = streams.EOF; 
-        function skipped(error) {
-            var result = {};
-            result[TATTLER_SKIPPED] = error;
-            return result;
-        }
-
-        function iterate(maybeStr) {
-            return Q(maybeStr).then(
-                function(str){
-                    if (str === streams.EOF) {
-                        return streams.EOF;
-                    }
-                    var currentValue = streams.value(str);
-                    maybePrereqs = streamsFn.seekToValue(resolveJobStream(currentValue.prereqs || []));
-                    
-
-                    return Q(streamsFn.fold(maybePrereqs,
-                                          function(acc, current){
-                                              return acc.concat(current)
-                                          },
-                                           []
-                                          )).then(
-                        function(prereqs) {
-                            var pandp = _.map(prereqs, 
-                                              function(prereq){
-                                                  var deferred = Q.defer();
-                                                  var runPrereq = function(){
-                                                      return Q(prereq()).then(
-                                                          function(result){
-                                                              deferred.resolve(result);
-                                                              return result;
-                                                          }, 
-                                                          function(error){
-                                                              deferred.reject(error);
-                                                              return Q.reject(error);
-                                                          });
-                                                  }
-                                                  runPrereq.id = name(prereq);
-                                                  return {
-                                                      task:runPrereq,
-                                                      promise: deferred.promise
-                                                  }
-                                              });
-                            var delegatedPrereqs = _.pluck(pandp, 'task');
-                            var delegatedResults = _.pluck(pandp, 'promise');
-                            var forDeps = function() {
-                                return Q.all(delegatedResults).then(
-                                    function(){
-                                        return currentValue();
-                                    },
-                                    function(error) {
-                                        return Q.reject(skipped(error));
-                                    })
-                            };
-                            forDeps.id = name(currentValue);
-
-                            return streamsFn.concat(
-                                streamsFn.forArray(delegatedPrereqs),
-                                streams.cons(
-                                    forDeps, 
-                                    function(){
-                                        return iterate(streams.next(str));
-                                    }));
-                        });
-                });
-        };
-
-        return {next: function(){return iterate(streamsFn.seekToValue(stream))}};
+        return stream;
     };
 
     function isSkipped(status) {
@@ -164,6 +96,7 @@ var tattler = function(Q, _, streams, streamsFn) {
             var prereqStream = resolvePreReqs(stream);
             return streamsFn.map(prereqStream,
                           function(job){
+                              console.log("running job: ", name(job));
                               return Q(job()).then(
                                   function(passed){
                                       return {
