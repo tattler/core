@@ -115,8 +115,14 @@ var tattler = function(Q, _, streams, streamsFn) {
 
             var pendingTask = function(){
                 return Q.all(prereqResults).then(
-                    log("success: "),
-                    log("failure : ")).spread(task);
+                    function(resolvedPrereqResults){
+                        return _.spread(task, resolvedPrereqResults)
+                    },
+                    function(error) {
+                        var result = {}
+                        result[TATTLER_SKIPPED]=error;
+                        return Q.reject(result);
+                    });
             }
             pendingTask.id = name(task);
             pendingTask.prereqs = [];
@@ -130,7 +136,8 @@ var tattler = function(Q, _, streams, streamsFn) {
                         },
                         function(error){
                             console.log("error = ", result);
-                            return deferreds[name(prereq)].reject(error);
+                            deferreds[name(prereq)].reject(error);
+                            return Q.reject(error);
                         }
                     );
                 };
