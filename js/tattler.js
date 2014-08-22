@@ -118,15 +118,14 @@ var tattler = function(Q, _, streams, streamsFn) {
             var prereqResults = [];
             _.each(task.prereqs, function(deferred){
                 var deferredPrereqResult = Q.defer();
-                deferredPrereqResults[deferred.id] = deferredPrereqResult;
-                prereqResults = prereqResults.concat([deferredPrereqResult.promise])
+                deferredPrereqResults[name(deferred)] = deferredPrereqResult;
+                prereqResults = prereqResults.concat([deferredPrereqResult.promise]);
             });
 
             var taskThatNeedPrereqResults = decorateTask(task, function(decorated){
                 return Q(prereqResults).spread(
                     decorated,
                     function(error) {
-                        console.log("error: ", error);
                         var result = {}
                         result[TATTLER_SKIPPED]=error;
                         return Q.reject(result);
