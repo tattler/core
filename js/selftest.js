@@ -35,13 +35,8 @@
 
             function testRun(name, specs, expectedResults) {
                 var specResults = tattler.run (specs)
-                tattler.streamsFn.each(specResults, function(r){
-                    Q(r).done(function(resR){
-                        console.log("result: ", resR);
-                    });
-                });
                 var maybeSummary = tattler.streamsFn.fold(
-                    specResults, 
+                    specResults,
                     function(acc, res){
                         return Q.all([acc, res]).spread(
                             function(resolvedAcc, resolvedRes) {
@@ -60,8 +55,8 @@
             }
 
 
-
-       /*     testRun("spec with a name",
+/*
+            testRun("spec with a name",
                     passingSpecWithAName,
                     {'passingSpecWithAName':{passed: true,
                                              name: 'passingSpecWithAName',
@@ -79,7 +74,7 @@
                     {'failing test':{passed: false,
                                      name: 'failing test',
                                      result: 'error'}});
-*/
+
             testRun("one passing, one failing",
                     [passingSpec,
                      failingSpec],
@@ -91,7 +86,7 @@
                                      result: 'error'}
                     }
                   );
-/*
+
             testRun("run passing spec in object",
                     {'spec one': passingSpecBody},
                     {'spec one': 
@@ -102,7 +97,7 @@
                      }
                     }
                    );
-
+*/
             testRun("run failing dependent",
                     [dependsOnFailingSpec],
                     { 
@@ -116,7 +111,7 @@
                             name:'depends on failing'
                         }
                     });
-            testRun("run passing dependent",
+  /*          testRun("run passing dependent",
                     [dependsOnPassingSpec],
                     {
                         'simple test':{

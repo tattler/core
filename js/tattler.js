@@ -32,10 +32,7 @@ var tattler = function(Q, _, streams, streamsFn) {
         }
 
         if(_.isFunction(fn))  {
-            var run = function(){
-                var pending = _.map(deps, runTask);            
-                return Q.all(pending).spread(fn);
-            }
+            var run = fn;
             run.id = id;
             run.prereqs = deps;
             return run;
@@ -82,8 +79,69 @@ var tattler = function(Q, _, streams, streamsFn) {
 
     var TATTLER_SKIPPED = '__TATTLER__SKIPPED';
 
+    function dumpStream(stream) {
+        console.log("[start dump]");
+        streamsFn.each(stream, function(element){
+            console.log("e: ", element);
+        }, function(){
+            console.log("[end dump]");
+        });
+        
+
+    }
+
+    function log(prepend){
+        return function(value){
+            console.log(prepend, value);
+            return value;
+        }
+    }
+
     function resolvePreReqs(stream) {
-        return stream;
+        var result = streamsFn.flatMap(stream, function(task){
+            var deferredPrereqResults = _.map(task.prereqs, function(prereq){
+                var deferred = Q.defer();
+                deferred.id = name(prereq);
+                return deferred;
+            });
+
+            var deferreds = {};
+            _.each(deferredPrereqResults, function(deferred){
+                deferreds[deferred.id] = deferred;
+            });
+
+            
+            var prereqResults = _.pluck(deferredPrereqResults, 'promise');
+
+            var pendingTask = function(){
+                return Q.all(prereqResults).then(
+                    log("success: "),
+                    log("failure : ")).spread(task);
+            }
+            pendingTask.id = name(task);
+            pendingTask.prereqs = [];
+
+            var prereqProbes = _.map(task.prereqs, function(prereq){
+                var prereqProbe = function(){
+                    return Q(prereq()).then(
+                        function(result) {
+                            console.log("resolved = ", result);
+                            return deferreds[name(prereq)].resolve(result);
+                        },
+                        function(error){
+                            console.log("error = ", result);
+                            return deferreds[name(prereq)].reject(error);
+                        }
+                    );
+                };
+                prereqProbe.id = name(prereq);
+                prereqProbe.prereqs = prereq.prereqs;
+                return prereqProbe;
+            });
+            console.log("prereqProbes: ", prereqProbes, pendingTask);
+            return streamsFn.forArray(prereqProbes.concat([pendingTask]));
+        });
+        return result;
     };
 
     function isSkipped(status) {
@@ -94,6 +152,7 @@ var tattler = function(Q, _, streams, streamsFn) {
         return Q.when(jobs).then(function(resolvedJobs) {
             var stream = resolveJobStream(resolvedJobs);
             var prereqStream = resolvePreReqs(stream);
+            dumpStream(prereqStream);
             return streamsFn.map(prereqStream,
                           function(job){
                               console.log("running job ", name(job));
