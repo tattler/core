@@ -97,52 +97,52 @@ var tattler = function(Q, _, streams, streamsFn) {
         }
     }
 
+    function decorateTask(delegate, decorator){
+        var decorated =  function(){
+            return decorator(delegate);
+        };
+        decorated.id = name(delegate);
+        decorated.prereqs = delegate.prereqs;
+        return decorated;
+    }
+
     function resolvePreReqs(stream) {
         var result = streamsFn.flatMap(stream, function(task){
-            var deferredPrereqResults = _.map(task.prereqs, function(prereq){
-                var deferred = Q.defer();
-                deferred.id = name(prereq);
-                return deferred;
+            var deferredPrereqResults = {};
+            var prereqResults = [];
+            _.each(task.prereqs, function(deferred){
+                var deferredPrereqResult = Q.defer();
+                deferredPrereqResults[deferred.id] = deferredPrereqResult;
+                prereqResults = prereqResults.concat([deferredPrereqResult.promise])
             });
 
-            var deferreds = {};
-            _.each(deferredPrereqResults, function(deferred){
-                deferreds[deferred.id] = deferred;
-            });
-            
-            var prereqResults = _.pluck(deferredPrereqResults, 'promise');
-
-            var pendingTask = function(){
+            var taskThatNeedPrereqResults = decorateTask(task, function(decorated){
                 return Q.all(prereqResults).then(
                     function(resolvedPrereqResults){
-                        return _.spread(task, resolvedPrereqResults)
+                        return _.spread(decorated, resolvedPrereqResults)
                     },
                     function(error) {
                         var result = {}
                         result[TATTLER_SKIPPED]=error;
                         return Q.reject(result);
                     });
-            }
-            pendingTask.id = name(task);
-            pendingTask.prereqs = [];
+            });
 
-            var prereqProbes = _.map(task.prereqs, function(prereq){
-                var prereqProbe = function(){
-                    return Q(prereq()).then(
+            var resultCollectingPrereqTasks = _.map(task.prereqs, function(prereq){
+                return decorateTask(prereq, function(decorated){
+                    var prereqName = name(decorated);
+                    return Q(decorated()).then(
                         function(result) {
-                            return deferreds[name(prereq)].resolve(result);
+                            return deferredPrereqResults[prereqName].resolve(result);
                         },
                         function(error){
-                            deferreds[name(prereq)].reject(error);
+                            deferredPrereqResults[prereqName].reject(error);
                             return Q.reject(error);
                         }
                     );
-                };
-                prereqProbe.id = name(prereq);
-                prereqProbe.prereqs = prereq.prereqs;
-                return prereqProbe;
+                });
             });
-            return streamsFn.forArray(prereqProbes.concat([pendingTask]));
+            return streamsFn.forArray(resultCollectingPrereqTasks.concat([taskThatNeedPrereqResults]));
         });
         return result;
     };
