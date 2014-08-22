@@ -54,8 +54,6 @@
                 });
             }
 
-/*
-
             testRun("spec with a name",
                     passingSpecWithAName,
                     {'passingSpecWithAName':{passed: true,
@@ -110,9 +108,9 @@
                             passed:'skipped',
                             name:'depends on failing'
                         }
-                    });*/
+                    });
 
-/*            testRun("run passing dependent",
+            testRun("run passing dependent",
                     [dependsOnPassingSpec],
                     {
                         'simple test':{
@@ -125,7 +123,7 @@
                             name:'depends on passing',
                             result: 'From dependent: result'
                         }
-                    });*/
+                    });
             testRun("run passing depends on many",
                     [dependsOnManyPassingSpecs],
                     {
@@ -144,7 +142,7 @@
                             result: 'From dependent: result and a result'
                         }
                     });
-         /*   testRun("run passing object dependency",
+            testRun("run passing object dependency",
                     [tattler.task('two-specs-in-object-with-deps', [passingSpecWithAName],{
                         'dep1':function(depr1){return Q.resolve("dep1 "+depr1)},
                         'dep2':function(depr2){return Q.resolve("dep2 "+depr2)}
@@ -164,7 +162,7 @@
                             passed:true,
                             result: 'dep2 a result'
                         }
-                   });*/
+                   });
         }
     }
     if (typeof define !== 'undefined') {
