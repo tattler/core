@@ -54,8 +54,8 @@
                 });
             }
 
-
 /*
+
             testRun("spec with a name",
                     passingSpecWithAName,
                     {'passingSpecWithAName':{passed: true,
@@ -97,7 +97,7 @@
                      }
                     }
                    );
-*/
+
             testRun("run failing dependent",
                     [dependsOnFailingSpec],
                     { 
@@ -110,8 +110,9 @@
                             passed:'skipped',
                             name:'depends on failing'
                         }
-                    });
-  /*          testRun("run passing dependent",
+                    });*/
+
+            testRun("run passing dependent",
                     [dependsOnPassingSpec],
                     {
                         'simple test':{
@@ -125,7 +126,7 @@
                             result: 'From dependent: result'
                         }
                     });
-            testRun("run passing depends on many",
+/*            testRun("run passing depends on many",
                     [dependsOnManyPassingSpecs],
                     {
                         'simple test':{
@@ -163,7 +164,7 @@
                             passed:true,
                             result: 'dep2 a result'
                         }
-                    });*/
+                   });*/
         }
     }
     if (typeof define !== 'undefined') {
@@ -190,6 +191,7 @@
                 }
             }
             else if (expected !== actual) {
+                console.log("in path: [", path, "] expected: <", expected, "> !== <", actual,">");
                 function AssertionError() {
                     return {name:'AssertionError',
                             path: path,

@@ -18,6 +18,9 @@ var tattler = function(Q, _, streams, streamsFn) {
         return task();
     }
 
+
+    
+
     var task = function(id, deps, fn) {
         if(fn === undefined) {
             if(_.isArray(id)) {
@@ -32,7 +35,9 @@ var tattler = function(Q, _, streams, streamsFn) {
         }
 
         if(_.isFunction(fn))  {
-            var run = fn;
+            var run = function(){
+                return fn.apply(fn, _(arguments).toArray().value());
+            };
             run.id = id;
             run.prereqs = deps;
             return run;
@@ -97,9 +102,10 @@ var tattler = function(Q, _, streams, streamsFn) {
         }
     }
 
+
     function decorateTask(delegate, decorator){
-        var decorated =  function(){
-            return decorator(delegate);
+        var decorated =  function(v){
+            return decorator(delegate, delegate, _(arguments).toArray().value());
         };
         decorated.id = name(delegate);
         decorated.prereqs = delegate.prereqs;
@@ -117,11 +123,10 @@ var tattler = function(Q, _, streams, streamsFn) {
             });
 
             var taskThatNeedPrereqResults = decorateTask(task, function(decorated){
-                return Q.all(prereqResults).then(
-                    function(resolvedPrereqResults){
-                        return _.spread(decorated, resolvedPrereqResults)
-                    },
+                return Q(prereqResults).spread(
+                    decorated,
                     function(error) {
+                        console.log("error: ", error);
                         var result = {}
                         result[TATTLER_SKIPPED]=error;
                         return Q.reject(result);
@@ -129,11 +134,12 @@ var tattler = function(Q, _, streams, streamsFn) {
             });
 
             var resultCollectingPrereqTasks = _.map(task.prereqs, function(prereq){
-                return decorateTask(prereq, function(decorated){
+                return decorateTask(prereq, function(decorated, args){
                     var prereqName = name(decorated);
-                    return Q(decorated()).then(
+                    return Q(decorated.apply(decorated, args)).then(
                         function(result) {
-                            return deferredPrereqResults[prereqName].resolve(result);
+                            deferredPrereqResults[prereqName].resolve(result);
+                            return result;
                         },
                         function(error){
                             deferredPrereqResults[prereqName].reject(error);
