@@ -47,7 +47,7 @@
                     },
                     Q.resolve({}));
                 Q(maybeSummary).done(function(summary){
-                    console.log("running: ", name);
+                    console.log("running test: ", name);
                     console.log("Summary: ", summary)
                     deepEqual(expectedResults, summary);
                     console.log("passed: ", name);

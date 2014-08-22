@@ -109,7 +109,6 @@ var tattler = function(Q, _, streams, streamsFn) {
             _.each(deferredPrereqResults, function(deferred){
                 deferreds[deferred.id] = deferred;
             });
-
             
             var prereqResults = _.pluck(deferredPrereqResults, 'promise');
 
@@ -131,11 +130,9 @@ var tattler = function(Q, _, streams, streamsFn) {
                 var prereqProbe = function(){
                     return Q(prereq()).then(
                         function(result) {
-                            console.log("resolved = ", result);
                             return deferreds[name(prereq)].resolve(result);
                         },
                         function(error){
-                            console.log("error = ", result);
                             deferreds[name(prereq)].reject(error);
                             return Q.reject(error);
                         }
@@ -145,7 +142,6 @@ var tattler = function(Q, _, streams, streamsFn) {
                 prereqProbe.prereqs = prereq.prereqs;
                 return prereqProbe;
             });
-            console.log("prereqProbes: ", prereqProbes, pendingTask);
             return streamsFn.forArray(prereqProbes.concat([pendingTask]));
         });
         return result;
@@ -159,7 +155,6 @@ var tattler = function(Q, _, streams, streamsFn) {
         return Q.when(jobs).then(function(resolvedJobs) {
             var stream = resolveJobStream(resolvedJobs);
             var prereqStream = resolvePreReqs(stream);
-            dumpStream(prereqStream);
             return streamsFn.map(prereqStream,
                           function(job){
                               console.log("running job ", name(job));
