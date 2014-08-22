@@ -96,6 +96,8 @@ var tattler = function(Q, _, streams, streamsFn) {
             var prereqStream = resolvePreReqs(stream);
             return streamsFn.map(prereqStream,
                           function(job){
+                              console.log("running job ", name(job));
+
                               return Q(job()).then(
                                   function(passed){
                                       return {
