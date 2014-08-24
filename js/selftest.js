@@ -163,6 +163,29 @@
                             result: 'dep2 a result'
                         }
                    });
+            testRun("run recursive dependencies",
+                   [tattler.task('recursive deps', 
+                                 [dependsOnPassingSpec],
+                                 function(res){
+                                     return Q.resolve("top: " + res);
+                                 })],
+                   {
+                       'simple test':{
+                           name: 'simple test',
+                           passed:true,
+                           result:'result'
+                       },
+                       'depends on passing':{
+                           name: 'depends on passing',
+                           passed: true,
+                           result: 'From dependent: result'
+                       },
+                       'recursive deps': {
+                           name: 'recursive deps',
+                           passed: true,
+                           result: 'top: From dependent: result'
+                       }
+                   });
         }
     }
     if (typeof define !== 'undefined') {

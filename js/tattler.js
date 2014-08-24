@@ -105,14 +105,14 @@ var tattler = function(Q, _, streams, streamsFn) {
 
     function decorateTask(delegate, decorator){
         var decorated =  function(v){
-            return decorator(delegate, delegate, _(arguments).toArray().value());
+            return decorator(delegate, _(arguments).toArray().value());
         };
         decorated.id = name(delegate);
         decorated.prereqs = delegate.prereqs;
         return decorated;
     }
 
-    function resolvePreReqs(stream) {
+    function resolvePrereqs(stream) {
         var result = streamsFn.flatMap(stream, function(task){
             var deferredPrereqResults = {};
             var prereqResults = [];
@@ -147,7 +147,10 @@ var tattler = function(Q, _, streams, streamsFn) {
                     );
                 });
             });
-            return streamsFn.forArray(resultCollectingPrereqTasks.concat([taskThatNeedPrereqResults]));
+
+            return streamsFn.concat(
+                resolvePrereqs(streamsFn.forArray(resultCollectingPrereqTasks)),
+                streamsFn.forArray([taskThatNeedPrereqResults]));
         });
         return result;
     };
@@ -159,7 +162,7 @@ var tattler = function(Q, _, streams, streamsFn) {
     var run = function(jobs){ 
         return Q.when(jobs).then(function(resolvedJobs) {
             var stream = resolveJobStream(resolvedJobs);
-            var prereqStream = resolvePreReqs(stream);
+            var prereqStream = resolvePrereqs(stream);
             return streamsFn.map(prereqStream,
                           function(job){
                               console.log("running job ", name(job));
