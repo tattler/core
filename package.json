@@ -1,6 +1,6 @@
 {
   "name": "tattler",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A run and report framework. Keeps you up to date with what's going on with your code",
   "main": "js/tattler.js",
   "scripts": {
@@ -22,8 +22,8 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "commander": "~2.0.0",
-    "q": "~0.9.7",
-    "lodash": "~2.3.0",
+    "q": "0.9.x",
+    "lodash": ">=2.3.0",
     "consjs": "0.0.4"
   }
 }
