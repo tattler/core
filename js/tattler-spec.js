@@ -1,5 +1,5 @@
 (function(){
-    function spec(q, _) {
+    function spec(q, _, tattler) {
         function makeError(message) {
             return new Error(message);
         };
@@ -44,15 +44,32 @@
         };
 
         function makeSpec(name, specs){
+            if(arguments.length == 1) {
+                return {
+                    preconditions : function() {
+                        var conditions = arguments;
+                        return function(specs){
+                            var prereqs = _(conditions).toArray().value();
+                            return tattler.task("id", prereqs, specs);
+                        };
+                    }
+                };
+            }
             return specs;
         };
         makeSpec.assert = asserts;
+        makeSpec.fail = function fail(message){
+            return q.reject(message);
+        };
+        makeSpec.success = function success(value){
+            return q.resolve(value);
+        }
         return makeSpec;
     }
 
     if (typeof define !== 'undefined') {
-        define(['q', 'lodash'], spec);
+        define(['q', 'lodash', 'tattler'], spec);
     } else if (typeof module !== 'undefined' && module.exports) {
-        module.exports = spec(require('q'), require('lodash'));
+        module.exports = spec(require('q'), require('lodash'), require('./tattler'));
     }
 })();

@@ -5,9 +5,17 @@ module.exports.run = function(specs) {
         var results = tattler.run(specs);
         var summary = tattler.streamsFn.fold(results, function(acc, current){
             return q([acc, current]).spread(function(racc, rcurrent){
-                process.stdout.write(rcurrent.passed ? '.' : 'E');
+                function skippedOrPassed(value) {
+                    return tattler.isSkipped(value) ? 'S' : '.';
+                }
+                process.stdout.write(rcurrent.passed ? skippedOrPassed(rcurrent) : 'E');
                 if(rcurrent.passed) {
-                    racc.passed = racc.passed + 1;
+                    if(tattler.isSkipped(rcurrent)) {
+                        racc.skipped = racc.skipped.concat([rcurrent]);
+                    }
+                    else {
+                        racc.passed = racc.passed + 1;
+                    }
                 }
                 else {
                     racc.failed = racc.failed.concat([rcurrent]);
@@ -15,6 +23,7 @@ module.exports.run = function(specs) {
                 return racc;
             });
         }, q({
+            skipped: [],
             failed: [],
             passed: 0
         }));
@@ -31,12 +40,14 @@ module.exports.run = function(specs) {
                     process.stdout.write('\n');
                 }
             });
-            process.stdout.write('----------\n');
             process.stdout.write('passed: ');
             process.stdout.write(''+rsummary.passed);
             process.stdout.write('\n');
             process.stdout.write('failed: ');
             process.stdout.write(''+rsummary.failed.length);
+            process.stdout.write('\n');
+            process.stdout.write('skipped: ');
+            process.stdout.write(''+rsummary.skipped.length);
             process.stdout.write('\n');
         });
 };

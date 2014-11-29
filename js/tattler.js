@@ -39,7 +39,11 @@ var tattler = function(Q, _, streams, streamsFn) {
                 return fn.apply(fn, _(arguments).toArray().value());
             };
             run.id = id;
-            run.prereqs = deps;
+            run.prereqs = _.map(deps,
+                                function(dep){
+                                    return task(name(dep), dep);
+                                }
+                               );
             return run;
         }
         if(_.isObject(fn)) {
@@ -200,7 +204,10 @@ var tattler = function(Q, _, streams, streamsFn) {
         streamsFn:streamsFn,
         task: task,
         run: run,
-        progress:progress
+        progress:progress,
+        isSkipped:function(result){
+            return "skipped" === result.passed;
+        }
     };
     return res;
 };
