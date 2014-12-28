@@ -8,12 +8,6 @@ var tattler = function(Q, _, streams, streamsFn) {
         return {name:name, status:status};
     };
 
-    var progress = {
-        started: function(name){return status(name, 'started');},
-        success: function(name){return status(name, 'success');},
-        failure: function(name){return status(name, 'failure');}
-    };
-
     function runTask(task) {
         return task();
     }
@@ -169,7 +163,7 @@ var tattler = function(Q, _, streams, streamsFn) {
             var prereqStream = resolvePrereqs(stream);
             return streamsFn.map(prereqStream,
                           function(job){
-                              return Q(job()).then(
+                              var result = Q(job()).then(
                                   function(passed){
                                       return {
                                           passed: true,
@@ -193,6 +187,8 @@ var tattler = function(Q, _, streams, streamsFn) {
                                       }
                                   }
                               );
+                              result.name = name(job);
+                              return result;
                           });
         });
     };
@@ -204,7 +200,6 @@ var tattler = function(Q, _, streams, streamsFn) {
         streamsFn:streamsFn,
         task: task,
         run: run,
-        progress:progress,
         isSkipped:function(result){
             return "skipped" === result.passed;
         }

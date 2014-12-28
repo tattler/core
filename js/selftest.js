@@ -1,6 +1,6 @@
 (function() {
     {
-        var specs = function(Q, tattler, assert) {
+        var specs = function(Q, tattler, spec) {
             var passingSpecBody = function(){
                 var deferred = Q.defer();
                 deferred.resolve("result");
@@ -46,12 +46,18 @@
                         )
                     },
                     Q.resolve({}));
-                Q(maybeSummary).done(function(summary){
-                    console.log("running test: ", name);
-                    console.log("Summary: ", summary)
-                    deepEqual(expectedResults, summary);
-                    console.log("passed: ", name);
-                });
+                Q(maybeSummary).then(function(summary){
+                    return spec.assert.equals(expectedResults, summary);
+                }).then(
+                    function(result){
+                         console.log("passed: ", name);
+                    },
+                    function(result){
+                        console.log("failed: ", name);
+                        console.log("result: ", result);
+                    }
+
+                );
             }
 
             testRun("spec with a name",
@@ -106,7 +112,8 @@
                         },
                         'depends on failing': {
                             passed:'skipped',
-                            name:'depends on failing'
+                            name:'depends on failing',
+                            result: 'error'
                         }
                     });
 
@@ -189,13 +196,13 @@
         }
     }
     if (typeof define !== 'undefined') {
-        define(['q', 'tattler', 'assert-amd'], specs);
+        define(['q', 'tattler', 'tattler-spec'], specs);
     }
     else if (typeof module !== 'undefined' && module.exports) {
         specs(
             require('q'),
             require('./tattler'),
-            require('assert')
+            require('./tattler-spec')
         )
     }
     else {
