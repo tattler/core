@@ -12,9 +12,6 @@ var tattler = function(Q, _, streams, streamsFn) {
         return task();
     }
 
-
-    
-
     var task = function(id, deps, fn) {
         if(fn === undefined) {
             if(_.isArray(id)) {
@@ -35,7 +32,7 @@ var tattler = function(Q, _, streams, streamsFn) {
             run.id = id;
             run.prereqs = _.map(deps,
                                 function(dep){
-                                    return task(name(dep), dep);
+                                    return task(name(dep), dep.prereqs, dep);
                                 }
                                );
             return run;
