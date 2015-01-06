@@ -1,6 +1,6 @@
 {
   "name": "tattler",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A run and report framework. Keeps you up to date with what's going on with your code",
   "main": "js/tattler.js",
   "scripts": {
